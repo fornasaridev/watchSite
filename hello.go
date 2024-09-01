@@ -4,77 +4,110 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 )
 
-const monitoramento = 3
-const delay = 5
-
 func main() {
-	exibirIntroducao()
-	for {
+	nome := "Gustavo"
+	var versao float32 = 1.1
 
-		exibirMenu()
+	fmt.Println("Olá, sr.", nome)
+	fmt.Println("Versão:", versao)
 
-		comandoLido := lerComando()
+	fmt.Println("1 - Iniciar o monitoramento")
+	fmt.Println("2 - Exibir logs")
+	fmt.Println("0 - Sair")
 
-		switch comandoLido {
-		case 1:
-			iniciarMonitoramento()
-		case 2:
-			print("Exibindo logs...")
-		case 0:
-			println("Saindo do programa...")
-			os.Exit(0)
-		default:
-			println("Não conheço este comando")
-			os.Exit(-1)
+	var comando int
+	fmt.Scan(&comando)
+	fmt.Println("O comando escolhido foi", comando)
 
-		}
+	if comando == 1 {
+		iniciarMonitoramento()
+	}
+	if comando == 2 {
+		imprimirLogs()
+		os.Exit(0)
 
 	}
-
-}
-
-func exibirIntroducao() {
-	nome := "Gustavo"
-	versao := " 1.1"
-
-	print("Olá, sr.", nome, "\n")
-	print("Versão:", versao, "\n")
-}
-func lerComando() int {
-	var comandoLido int
-	fmt.Scan(&comandoLido) // Ponteiro
-	println("O comando escolhido foi", comandoLido)
-	return comandoLido
-}
-
-func exibirMenu() {
-	print("1 - Iniciar o monitoramento\n")
-	print("2 - Exibir logs\n")
-	print("0 - Sair\n")
+	if comando == 0 {
+		fmt.Println("Saindo...")
+		os.Exit(0)
+	} else {
+		fmt.Println("Comando não reconhecido")
+		os.Exit(-1)
+	}
 }
 
 func iniciarMonitoramento() {
 	fmt.Println("Monitorando...")
-	sites := []string{"https://www.google.com.br", "https://www.alura.com.br", "https://www.caelum.com.br"}
+	sites := lerSitesArquivos()
 
-	for I := 0; I < monitoramento; I++ {
-		for i, site := range sites {
-			fmt.Println("Testando site", i, ":", site)
-			testarSite(site)
-		}
-		time.Sleep(delay * time.Second)
-		println("")
+	for i, site := range sites {
+		fmt.Println("Testando site", i, ":", site)
+		testarSite(site)
 	}
-	println("")
+}
+
+func lerSitesArquivos() []string {
+	var sites []string
+	arquivo, err := os.ReadFile("sites.txt")
+	if err != nil {
+		fmt.Println("Erro ao abrir o arquivo:", err)
+		return sites
+	}
+
+	linhas := strings.Split(string(arquivo), "\n")
+	for _, linha := range linhas {
+		linha = strings.TrimSpace(linha)
+		if linha != "" {
+			if !strings.HasPrefix(linha, "http://") && !strings.HasPrefix(linha, "https://") {
+				linha = "https://" + linha
+			}
+			sites = append(sites, linha)
+		}
+	}
+
+	return sites
 }
 
 func testarSite(site string) {
 	resp, err := http.Get(site)
 	if err != nil {
 		fmt.Println("Erro ao acessar o site:", err)
+		return
+	}
+	if resp.StatusCode == 200 {
+		println("Site", site, "foi carregado com sucesso!")
+		registraLog(site, true)
+	} else {
+		println("Site", site, "está com problemas. Status:", resp.Status)
+		registraLog(site, false)
 	}
 	fmt.Println("Status do site:", resp.Status)
+}
+
+func registraLog(site string, status bool) {
+
+	arquivo, err := os.OpenFile("log.txt", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		fmt.Println("Erro ao abrir o arquivo de log:", err)
+		return
+	}
+
+	arquivo.WriteString(time.Now().Format("02/01/2006 15:04:05 ") + site + " - online: " + fmt.Sprintf("%t", status) + "\n")
+
+	arquivo.Close()
+
+}
+func imprimirLogs() {
+	arquivo, err := os.ReadFile("log.txt")
+	if err != nil {
+		fmt.Println("Erro ao abrir o arquivo de log:", err)
+		return
+	}
+
+	fmt.Println(string(arquivo))
+
 }

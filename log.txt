@@ -1,0 +1,4 @@
+01/09/2024 00:58:29 https://www.alura.com.br - online: true
+01/09/2024 00:58:30 https://www.caelum.com.br - online: true
+01/09/2024 00:58:30 https://www.casadocodigo.com.br - online: true
+01/09/2024 00:58:30 https://www.g1.com.br - online: true
